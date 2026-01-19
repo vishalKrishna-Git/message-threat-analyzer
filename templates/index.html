@@ -336,20 +336,15 @@
                 <div class="stats-container">
                     <div class="stat-card">
                         <div class="stat-number" id="stat-total">0</div>
-                        <div class="stat-label">Total Scams Blocked</div>
+                        <div class="stat-label">Threats Reported</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="stat-time" style="font-size:18px; margin-top:20px;">-</div>
                         <div class="stat-label">Last Scam Reported</div>
                     </div>
                 </div>
-                <div class="card">
-                    <h3 style="color: var(--accent);">System Status</h3>
-                    <p>✅ Database: <strong>Active</strong></p>
-                    <p>✅ OCR Engine: <strong>Online (Multi-Language)</strong></p>
-                    <p>✅ Threat Intelligence: <strong>Self-Learning Enabled</strong></p>
+                
                 </div>
-            </div>
 
             <div id="section-text">
                 <div class="header">
@@ -714,6 +709,7 @@
         }
     }
 
+    // --- UPDATED DOWNLOAD REPORT FUNCTION ---
     function downloadReport() {
         if (!currentAnalysisResult) return;
 
@@ -732,8 +728,12 @@
         }
 
         if (data.advice && data.advice.length > 0) {
-            content += `\nADVICE & EXPLANATION:\n`;
-            data.advice.forEach(a => content += `- ${a.replace(/\*\*/g, '')}\n`);
+            content += `\n--------------------------------\n`;
+            content += `EXPLANATION & SAFETY ADVICE:\n`;
+            data.advice.forEach(a => {
+                let cleanAdvice = a.replace(/\*\*/g, '');
+                content += `\n- ${cleanAdvice}\n`; 
+            });
         }
 
         content += `\n--------------------------------\n`;
