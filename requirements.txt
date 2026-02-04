@@ -1,0 +1,8 @@
+flask
+gunicorn
+pytesseract
+Pillow
+requests
+beautifulsoup4
+pdfplumber
+pyzbar

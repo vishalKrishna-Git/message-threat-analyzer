@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Threat Analyzer</title>
+    <style>
+        /* --- MODERN DASHBOARD THEME --- */
+        :root {
+            --bg-color: #0f172a;       /* Deep Navy */
+            --sidebar-bg: #1e293b;     /* Slate */
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;      /* White-ish */
+            --text-muted: #94a3b8;     /* Grey */
+            --accent: #06b6d4;         /* Cyan/Teal */
+            --accent-hover: #0891b2;
+            --border: #334155;
+            --safe-color: #22c55e;
+            --danger-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px; 
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 20px; 
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(6, 182, 212, 0.1);
+            color: var(--accent);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 28px; margin: 0; }
+        .header p { color: var(--text-muted); margin-top: 5px; }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            background-color: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 15px;
+            font-family: inherit;
+            font-size: 15px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            background-color: rgba(15, 23, 42, 0.5);
+            transition: 0.2s;
+        }
+        .upload-area:hover {
+            border-color: var(--accent);
+            background-color: rgba(6, 182, 212, 0.05);
+        }
+
+        /* PREVIEW GALLERY */
+        .preview-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 10px;
+            background: #0f172a;
+            border-radius: 8px;
+            min-height: 20px;
+        }
+
+        .preview-item {
+            position: relative;
+            display: inline-block;
+        }
+
+        .preview-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid var(--border);
+            transition: transform 0.2s;
+        }
+        
+        .preview-thumb:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .preview-close {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #ef4444; 
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            text-align: center;
+            line-height: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid var(--card-bg); 
+            z-index: 10;
+            transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .preview-close:hover {
+            transform: scale(1.1);
+            background-color: #dc2626;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: 0.2s;
+        }
+        .btn:hover { background-color: var(--accent-hover); }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+        .btn-outline:hover {
+            background-color: rgba(6, 182, 212, 0.1);
+        }
+
+        .result-box {
+            display: none; 
+            margin-top: 20px;
+        }
+
+        .verdict-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .safe { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+        .suspicious { background-color: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid #eab308; }
+        .danger { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
+        .flag-list { padding-left: 20px; color: var(--text-muted); }
+        .flag-list li { margin-bottom: 8px; }
+
+        .hidden { display: none !important; }
+        .spinner { color: var(--accent); font-weight: bold; display: none; margin-top: 10px;}
+
+        .advice-box {
+            background: rgba(6, 182, 212, 0.1); 
+            border-left: 4px solid var(--accent); 
+            padding: 15px; 
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .advice-text {
+            color: #cbd5e1;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .error-msg { color: #ef4444; font-size: 14px; margin-top: 10px; display: none; }
+
+        /* --- MOBILE RESPONSIVENESS START --- */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                align-items: center;
+                padding: 10px 15px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+                justify-content: space-between;
+                box-sizing: border-box;
+            }
+
+            .logo {
+                margin-bottom: 0;
+                font-size: 18px;
+                margin-right: 10px;
+            }
+
+            .nav-item {
+                margin-bottom: 0;
+                padding: 8px 12px;
+                font-size: 14px;
+                flex: 1;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            /* Hide spacer and private badge on mobile to fit screen */
+            .sidebar > div[style*="flex:1"], 
+            .sidebar > div:last-child {
+                display: none !important;
+            }
+
+            .main-content {
+                width: 100%;
+                padding: 20px 15px;
+                box-sizing: border-box;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            textarea {
+                height: 120px;
+            }
+        }
+        /* --- MOBILE RESPONSIVENESS END --- */
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">🛡️ Threat Analyzer</div>
+        
+        <div class="nav-item active" onclick="switchTab('text')">
+            📝 Text Scanner
+        </div>
+        <div class="nav-item" onclick="switchTab('image')">
+            📷 Document Scanner
+        </div>
+
+        <div style="flex:1"></div> 
+        <div class="nav-item" style="cursor: default; opacity: 0.5;">
+            🔒 100% Private
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            
+            <div id="section-text">
+                <div class="header">
+                    <h1>Text Scanner</h1>
+                    <p>Paste suspicious messages directly below for instant analysis.</p>
+                </div>
+                <div class="card">
+                    <textarea id="manualInput" placeholder="Paste SMS, WhatsApp, or Email content here..."></textarea>
+                    <button class="btn" onclick="analyzeText('manualInput', 'manual')">Scan Text</button>
+                </div>
+            </div>
+
+            <div id="section-image" class="hidden">
+                <div class="header">
+                    <h1>Document Scanner</h1>
+                    <p>Upload screenshots or PDFs of conversations/letters.</p>
+                </div>
+                <div class="card">
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <p style="font-size: 24px; margin-bottom: 10px;">📤</p>
+                        <p><strong>Click to Upload</strong></p>
+                        <p style="font-size: 12px; color: #64748b;">Supports Images (JPG/PNG) & PDF</p>
+                    </div>
+                    
+                    <input type="file" id="fileInput" style="display:none" accept="image/*,.pdf" multiple onchange="handleFileUpload(this)" onclick="this.value=null;">
+                    
+                    <p id="upload-error" class="error-msg"></p>
+                    <div id="preview-gallery" class="preview-gallery hidden"></div>
+
+                    <p id="ocr-status" class="spinner">Processing files (Multi-Language)...</p>
+
+                    <div id="ocr-result-area" class="hidden" style="margin-top: 20px;">
+                        <label style="display:block; margin-bottom:10px; font-weight:bold; color:var(--accent);">Extracted Text (Editable):</label>
+                        <textarea id="ocrInput"></textarea>
+                        <button class="btn" onclick="analyzeText('ocrInput', 'ocr')">Scan Extracted Text</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-box" class="card result-box">
+                <h3>Analysis Report</h3>
+                <div id="verdict-badge" class="verdict-badge">SAFE</div>
+                <p><strong>Threat Score:</strong> <span id="score-val">0</span>/10</p>
+                <hr style="border-color: var(--border); margin: 15px 0;">
+                
+                <p><strong>Detailed Findings:</strong></p>
+                <ul id="flag-list" class="flag-list"></ul>
+
+                <div id="advice-section" class="hidden">
+                    <div class="advice-box">
+                        <h4 style="margin-top:0; color:var(--accent);">💡 Analysis & Advice</h4>
+                        <div id="advice-list"></div>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline" onclick="downloadReport()">📥 Download Safety Report</button>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    let selectedFiles = [];
+    let currentAnalysisResult = null; 
+
+    function switchTab(tab) {
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        // Hide All Sections
+        document.getElementById('section-text').classList.add('hidden');
+        document.getElementById('section-image').classList.add('hidden');
+        document.getElementById('result-box').style.display = 'none';
+
+        // Logic to show specific section and highlight sidebar
+        if(tab === 'text') {
+            navItems[0].classList.add('active');
+            document.getElementById('section-text').classList.remove('hidden');
+        }
+        else if(tab === 'image') {
+            navItems[1].classList.add('active');
+            document.getElementById('section-image').classList.remove('hidden');
+        }
+    }
+
+    function handleFileUpload(input) {
+        // --- INPUT VALIDATION: CHECK SIZE (10MB LIMIT) ---
+        const errorMsg = document.getElementById('upload-error');
+        errorMsg.style.display = 'none';
+        
+        if (input.files && input.files.length > 0) {
+            for (let i = 0; i < input.files.length; i++) {
+                if (input.files[i].size > 10 * 1024 * 1024) { 
+                    errorMsg.innerText = `❌ Error: '${input.files[i].name}' is too large (>10MB).`;
+                    errorMsg.style.display = 'block';
+                    return; // Stop processing
+                }
+            }
+            selectedFiles = selectedFiles.concat(Array.from(input.files));
+            updateGalleryAndOCR();
+        }
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updateGalleryAndOCR();
+    }
+
+    async function updateGalleryAndOCR() {
+        const gallery = document.getElementById('preview-gallery');
+        const status = document.getElementById('ocr-status');
+        const ocrArea = document.getElementById('ocr-result-area');
+        
+        gallery.innerHTML = ''; 
+        document.getElementById('ocrInput').value = "";
+        ocrArea.classList.add('hidden');
+        document.getElementById('result-box').style.display = 'none';
+
+        if (selectedFiles.length === 0) {
+            gallery.classList.add('hidden');
+            status.style.display = 'none';
+            return;
+        }
+
+        gallery.classList.remove('hidden');
+
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'preview-item';
+
+                if (file.type === 'application/pdf') {
+                    const icon = document.createElement('div');
+                    icon.className = 'preview-thumb';
+                    icon.style.background = '#eee';
+                    icon.style.color = '#333';
+                    icon.style.display = 'flex';
+                    icon.style.alignItems = 'center';
+                    icon.style.justifyContent = 'center';
+                    icon.style.fontWeight = 'bold';
+                    icon.innerText = "PDF";
+                    wrapper.appendChild(icon);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-thumb';
+                    wrapper.appendChild(img);
+                }
+
+                const btn = document.createElement('span');
+                btn.innerHTML = '&times;'; 
+                btn.className = 'preview-close';
+                btn.title = "Remove this item";
+                btn.onclick = function() { removeFile(index); };
+
+                wrapper.appendChild(btn);
+                gallery.appendChild(wrapper);
+            }
+            reader.readAsDataURL(file);
+        });
+
+        const formData = new FormData();
+        for (let i = 0; i < selectedFiles.length; i++) {
+            formData.append('image', selectedFiles[i]);
+        }
+
+        status.style.display = 'block';
+        status.innerText = `Extracting text/data from ${selectedFiles.length} file(s)...`;
+
+        try {
+            const response = await fetch('/extract_text', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.text) {
+                ocrArea.classList.remove('hidden');
+                document.getElementById('ocrInput').value = data.text;
+                status.style.display = 'none';
+            } else {
+                status.innerText = '❌ Error: ' + (data.error || 'Processing Failed');
+                status.style.color = '#ef4444';
+            }
+        } catch (error) {
+            status.innerText = '❌ Network Error';
+        }
+    }
+
+    async function analyzeText(inputId, sourceType) {
+        const text = document.getElementById(inputId).value;
+        if (!text.trim()) {
+            alert("Please enter text to scan.");
+            return;
+        }
+
+        document.getElementById('result-box').style.display = 'none';
+
+        try {
+            const response = await fetch('/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    text: text,
+                    source: sourceType 
+                })
+            });
+            const data = await response.json();
+            currentAnalysisResult = data; 
+
+            const resultBox = document.getElementById('result-box');
+            resultBox.style.display = 'block';
+
+            const badge = document.getElementById('verdict-badge');
+            badge.innerText = data.verdict;
+            badge.className = 'verdict-badge ' + data.color;
+
+            document.getElementById('score-val').innerText = data.score;
+
+            const list = document.getElementById('flag-list');
+            list.innerHTML = ""; 
+            
+            if (data.flags.length > 0) {
+                data.flags.forEach(flag => {
+                    const li = document.createElement('li');
+                    const formattedFlag = flag.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    li.innerHTML = formattedFlag;
+                    list.appendChild(li);
+                });
+            } else {
+                list.innerHTML = "<li>No specific threats detected.</li>";
+            }
+
+            const adviceSection = document.getElementById('advice-section');
+            const adviceList = document.getElementById('advice-list');
+            adviceList.innerHTML = "";
+
+            if (data.advice && data.advice.length > 0) {
+                adviceSection.classList.remove('hidden');
+                data.advice.forEach(tip => {
+                    const p = document.createElement('p');
+                    p.className = 'advice-text';
+                    p.innerHTML = tip.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    adviceList.appendChild(p);
+                });
+            } else {
+                adviceSection.classList.add('hidden');
+            }
+
+            // --- USABILITY: AUTO-CLEAR INPUTS ---
+            if (sourceType === 'manual') {
+                document.getElementById('manualInput').value = ""; 
+            }
+
+            if (sourceType === 'ocr') {
+                selectedFiles = []; 
+                const gallery = document.getElementById('preview-gallery');
+                gallery.innerHTML = ''; 
+                gallery.classList.add('hidden'); 
+                document.getElementById('ocr-status').style.display = 'none'; 
+                
+                document.getElementById('ocrInput').value = "";
+                document.getElementById('ocr-result-area').classList.add('hidden');
+            }
+            // -----------------------------------------------
+
+        } catch (error) {
+            console.error(error);
+            alert("Analysis failed.");
+        }
+    }
+
+    function downloadReport() {
+        if (!currentAnalysisResult) return;
+
+        const data = currentAnalysisResult;
+        let content = `THREAT ANALYSIS REPORT\n`;
+        content += `Date: ${new Date().toLocaleString()}\n`;
+        content += `--------------------------------\n`;
+        content += `VERDICT: ${data.verdict}\n`;
+        content += `THREAT SCORE: ${data.score}/10\n\n`;
+        
+        content += `DETAILED FINDINGS:\n`;
+        if (data.flags.length > 0) {
+            data.flags.forEach(f => content += `- ${f.replace(/\*\*/g, '')}\n`);
+        } else {
+            content += `- No specific threats detected.\n`;
+        }
+
+        if (data.advice && data.advice.length > 0) {
+            content += `\n--------------------------------\n`;
+            content += `EXPLANATION & SAFETY ADVICE:\n`;
+            data.advice.forEach(a => {
+                let cleanAdvice = a.replace(/\*\*/g, '');
+                content += `\n- ${cleanAdvice}\n`; 
+            });
+        }
+
+        content += `\n--------------------------------\n`;
+        content += `Generated by Threat Analyzer Tool.\n`;
+        content += `Stay Safe!`;
+
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Safety_Report_${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+</script>
+
+</body>
+</html>
